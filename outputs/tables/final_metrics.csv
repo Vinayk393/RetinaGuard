@@ -1,0 +1,6 @@
+,Model,Accuracy,Macro Precision,Macro Recall,Macro F1,QWK,AUROC (Referable),AUROC (Macro OvR)
+1,EfficientNet-B0 (CE),0.82,0.6887,0.6305,0.6528,0.8582,0.9786,0.9245
+2,EfficientNet-B0 (Focal Loss),0.7364,0.5985,0.6522,0.5923,0.8282,0.9752,0.9094
+3,ResNet-50 (Weighted CE),0.6927,0.5266,0.5618,0.505,0.8006,0.9763,0.9072
+4,EfficientNet-B0 (Weighted CE),0.6436,0.5315,0.5783,0.4955,0.783,0.9583,0.8724
+5,Baseline CNN (Weighted CE),0.6727,0.5163,0.497,0.4778,0.7182,0.9385,0.8584

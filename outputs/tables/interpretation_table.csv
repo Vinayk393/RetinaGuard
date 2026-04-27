@@ -1,0 +1,6 @@
+Model,QWK,Accuracy,Macro F1,AUROC Ref,Best Recall Class,Worst Recall Class,Notes
+Baseline CNN (Weighted CE),0.7182,0.6727,0.4778,0.9385,No DR,Proliferative,Lower-bound reference. Scratch CNN limited by capacity — cannot capture fine retinal features. AUROC=0.9385 — strong for clinical screening use.
+EfficientNet-B0 (CE),0.8582,0.82,0.6528,0.9786,No DR,Severe,Unweighted CE: model biases toward majority No DR class. High accuracy hides weak minority recall. AUROC=0.9786 — excellent clinical screening performance.
+EfficientNet-B0 (Weighted CE),0.783,0.6436,0.4955,0.9583,No DR,Moderate,Primary model. Class weighting penalises Severe/Proliferative misclassifications more heavily. AUROC=0.9583 — excellent clinical screening performance.
+EfficientNet-B0 (Focal Loss),0.8282,0.7364,0.5923,0.9752,No DR,Moderate,"Focal loss (γ=2, α=0.25): emphasises hard examples. Alpha scaling corrects prior magnitude issue. AUROC=0.9752 — excellent clinical screening performance."
+ResNet-50 (Weighted CE),0.8006,0.6927,0.505,0.9763,No DR,Proliferative,ResNet-50: 5× more parameters than EffB0. Competitive QWK with lower accuracy — may benefit from longer training. AUROC=0.9763 — excellent clinical screening performance.
