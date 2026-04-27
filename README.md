@@ -1,4 +1,4 @@
-# 🔬 RetinaGuard — Diabetic Retinopathy Classification
+# RetinaGuard — Diabetic Retinopathy Classification
 
 > **CECS 551 | Phase 4 | Spring 2026 | California State University, Long Beach**
 
