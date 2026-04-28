@@ -77,7 +77,7 @@ retinaguard/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/retinaguard.git
+git clone https://github.com/Vinayk393/RetinaGuard.git
 cd retinaguard
 ```
 
