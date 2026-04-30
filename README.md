@@ -11,7 +11,7 @@ Deep learning system for automated diabetic retinopathy (DR) severity grading fr
 
 ---
 
-## 👥 Team
+## Team
 
 | Name | Student ID |
 |---|---|
