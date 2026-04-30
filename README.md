@@ -78,7 +78,7 @@ retinaguard/
 
 ```bash
 git clone https://github.com/Vinayk393/RetinaGuard.git
-cd retinaguard
+cd RetinaGuard
 ```
 
 ### 2. Install dependencies
