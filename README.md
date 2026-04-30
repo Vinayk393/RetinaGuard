@@ -32,7 +32,7 @@ Diabetic retinopathy is the leading cause of preventable blindness worldwide. Ea
 
 | Model | QWK | Accuracy | Macro F1 | AUROC (Referable) |
 |---|---|---|---|---|
-| EfficientNet-B0 (CE) | **0.8492** | **0.8182** | 0.6276 | 0.9740 |
+| EfficientNet-B0 (CE) | **0.8582** | **0.8182** | 0.6276 | 0.9786 |
 | EfficientNet-B0 (Weighted CE) | 0.8298 | 0.7600 | 0.6106 | 0.9522 |
 | ResNet-50 (Weighted CE) | 0.8137 | 0.6855 | 0.5059 | 0.9754 |
 | EfficientNet-B0 (Focal Loss) | 0.6498 | 0.4273 | 0.3325 | 0.9396 |
