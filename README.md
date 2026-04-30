@@ -46,7 +46,7 @@ Diabetic retinopathy is the leading cause of preventable blindness worldwide. Ea
 
 ```
 retinaguard/
-├── notebooks/
+├── notebook/
 │   └── retinaguard_phase4.ipynb   # Main Kaggle notebook (run this)
 ├── src/
 │   ├── dataset.py                 # RetinopathyDataset class
