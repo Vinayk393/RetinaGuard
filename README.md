@@ -22,13 +22,13 @@ Deep learning system for automated diabetic retinopathy (DR) severity grading fr
 
 ---
 
-## 🎯 Problem Statement
+## Problem Statement
 
 Diabetic retinopathy is the leading cause of preventable blindness worldwide. Early automated screening can prevent vision loss in diabetic patients. This project trains and compares 5 deep learning models to classify DR severity into 5 grades (0–4).
 
 ---
 
-## 📊 Results Summary
+## Results Summary
 
 | Model | QWK | Accuracy | Macro F1 | AUROC (Referable) |
 |---|---|---|---|---|
@@ -42,7 +42,7 @@ Diabetic retinopathy is the leading cause of preventable blindness worldwide. Ea
 
 ---
 
-## 🗂️ Repository Structure
+## Repository Structure
 
 ```
 retinaguard/
@@ -67,7 +67,7 @@ retinaguard/
 
 ---
 
-## ⚙️ Setup & Reproduction
+## Setup & Reproduction
 
 ### Prerequisites
 
@@ -125,7 +125,7 @@ outputs/
 
 ---
 
-## 🧠 Methods Overview
+## Methods Overview
 
 ### Dataset
 - **3,662** retinal fundus images, 224×224px, Gaussian-filtered
@@ -165,7 +165,7 @@ outputs/
 
 ---
 
-## 📈 Key Figures
+## Key Figures
 
 | Figure | Description |
 |---|---|
@@ -182,19 +182,19 @@ outputs/
 
 ---
 
-## 📋 Requirements
+## Requirements
 
 See `requirements.txt` for full list.
 
 ---
 
-## 📄 License
+## License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🙏 Acknowledgements
+## Acknowledgements
 
 - Dataset: Sovit Ratan Rath (Kaggle)
 - Backbone weights: timm (Ross Wightman)
