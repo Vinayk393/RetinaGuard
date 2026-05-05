@@ -80,6 +80,8 @@ All results on the held-out test set (550 images, 15% stratified split) with **5
 | 4 | EfficientNet-B0 (Weighted CE) | 0.7830 | 0.6436 | 0.4955 | 0.9583 |
 | 5 | Baseline CNN (Weighted CE) | 0.7182 | 0.6727 | 0.4778 | 0.9385 |
 
+All results correspond to test-set evaluation with 5-fold TTA using the fixed seed (42) configuration described in the report.
+
 > **Clinical threshold**: At threshold = 0.435, EfficientNet-B0 (CE) achieves **93.3% sensitivity** and **93.3% specificity** for referable DR (grade >= 2), exceeding the 80% clinical screening guideline.
 
 ### Per-Class Recall — Best Model (EfficientNet-B0, CE)
