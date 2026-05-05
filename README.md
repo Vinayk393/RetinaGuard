@@ -156,31 +156,6 @@ To add a new experiment, copy any config file, change the relevant fields, and r
 python src/run_experiment.py --config configs/your_new_config.yaml
 ```
 
----
-
-## Outputs
-
-All outputs are saved automatically under `outputs/{experiment_slug}/` when you run `run_experiment.py`. Nothing needs to be manually saved or moved.
-
-```
-outputs/
-└── efficientnet_b0_focal_loss/           # slug of experiment_name
-    ├── checkpoints/
-    │   └── EfficientNet_B0_Focal_Loss_best.pth   # best weights (by Val QWK)
-    ├── figures/
-    │   ├── training_curves.png           # loss / accuracy / QWK per epoch
-    │   ├── confusion_matrix.png          # raw counts + row-normalised recall
-    │   ├── roc_curves.png                # binary referable DR + per-class OvR
-    │   └── per_class_metrics.png         # precision / recall / F1 per grade
-    ├── gradcam/
-    │   └── gradcam_EfficientNet_B0_Focal_Loss.png
-    ├── logs/
-    │   └── efficientnet_b0_focal_loss_YYYYMMDD_HHMMSS.log
-    ├── history.json                      # train/val loss, acc, QWK per epoch
-    ├── metrics.json                      # all test metrics (QWK, AUROC, F1 ...)
-    ├── classification_report.json        # per-class precision / recall / F1
-    └── threshold_results.json            # optimal threshold + sens/spec/F1/PPV
-```
 
 ---
 
