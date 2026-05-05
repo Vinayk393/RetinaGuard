@@ -5,9 +5,12 @@
 [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0-red)](https://pytorch.org)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF)](https://kaggle.com)
+[![Kaggle](https://img.shields.io/badge/Kaggle-Dataset-20BEFF)](https://www.kaggle.com/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered)
+[![GitHub](https://img.shields.io/badge/GitHub-RetinaGuard-181717?logo=github)](https://github.com/Vinayk393/RetinaGuard)
 
-Deep learning system for automated diabetic retinopathy (DR) severity grading from retinal fundus images. Trained and evaluated on the [Diabetic Retinopathy 224×224 Gaussian-Filtered Dataset](https://www.kaggle.com/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered).
+Deep learning system for **automated diabetic retinopathy (DR) severity grading** from retinal fundus images. Five model configurations are trained, evaluated, and compared on the publicly available [EyePACS-derived Gaussian-Filtered Dataset](https://www.kaggle.com/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered).
+
+Primary metric: **Quadratic Weighted Kappa (QWK)** — the clinically appropriate metric for ordinal DR grading that penalises misclassifications proportionally to the distance between grades.
 
 ---
 
@@ -22,47 +25,161 @@ Deep learning system for automated diabetic retinopathy (DR) severity grading fr
 
 ---
 
-## Problem Statement
+## Key Contributions
 
-Diabetic retinopathy is the leading cause of preventable blindness worldwide. Early automated screening can prevent vision loss in diabetic patients. This project trains and compares 5 deep learning models to classify DR severity into 5 grades (0–4).
+- **Unified evaluation framework** — QWK, AUROC, clinical threshold optimisation, and Grad-CAM++ in a single controlled pipeline
+- **Controlled loss function ablation** — CE vs Weighted CE vs Focal Loss under 9.4x real-world class imbalance, with practical deployment guidance for each
+- **Alpha-scaled Focal Loss fix** — alpha=0.25 prevents near-zero loss magnitude failure that causes training instability in standard implementations
+- **Config-driven reproducibility** — every experiment defined by a single YAML file; seed=42, stratified splits saved as CSV
+- **Clinical operating point** — threshold optimisation yields 93.3% sensitivity and 93.3% specificity for referable DR detection
+
+---
+
+## Quick Start
+
+```bash
+git clone https://github.com/Vinayk393/RetinaGuard.git
+cd RetinaGuard
+pip install -r requirements.txt
+
+# Run any experiment — full pipeline in one command
+python src/run_experiment.py --config configs/ce.yaml           # Best model (QWK 0.8582)
+python src/run_experiment.py --config configs/focal.yaml        # Best minority recall
+python src/run_experiment.py --config configs/weighted_ce.yaml  # Highest Severe recall
+python src/run_experiment.py --config configs/resnet50.yaml     # Architecture comparison
+python src/run_experiment.py --config configs/baseline_cnn.yaml # Lower-bound reference
+```
+
+Each command runs the complete pipeline: **data loading -> training -> TTA evaluation -> figures -> Grad-CAM++ -> all outputs saved automatically.**
+
+Override values at runtime without editing the config:
+```bash
+python src/run_experiment.py --config configs/focal.yaml --epochs 10 --seed 0 --batch_size 16
+```
 
 ---
 
 ## Results Summary
 
-| Model | QWK | Accuracy | Macro F1 | AUROC (Referable) |
-|---|---|---|---|---|
-| EfficientNet-B0 (CE) | **0.8582** | **0.8182** | **0.6276** | **0.9786** |
-| EfficientNet-B0 (Weighted CE) | 0.8298 | 0.7600 | 0.6106 | 0.9522 |
-| ResNet-50 (Weighted CE) | 0.8137 | 0.6855 | 0.5059 | 0.9754 |
-| EfficientNet-B0 (Focal Loss) | 0.6498 | 0.4273 | 0.3325 | 0.9396 |
-| Baseline CNN (Weighted CE) | 0.5096 | 0.5909 | 0.3753 | 0.8463 |
+All results on the held-out test set (550 images, 15% stratified split) with **5-fold Test-Time Augmentation (TTA)**.
 
-> **Primary metric**: Quadratic Weighted Kappa (QWK) — penalises ordinal misclassifications proportionally.
+| Rank | Model | QWK | Accuracy | Macro F1 | AUROC (Referable) |
+|---|---|---|---|---|---|
+| 1 | EfficientNet-B0 (CE) | **0.8582** | **0.8200** | **0.6528** | **0.9786** |
+| 2 | EfficientNet-B0 (Focal Loss) | 0.8282 | 0.7364 | 0.5923 | 0.9752 |
+| 3 | ResNet-50 (Weighted CE) | 0.8006 | 0.6927 | 0.5050 | 0.9763 |
+| 4 | EfficientNet-B0 (Weighted CE) | 0.7830 | 0.6436 | 0.4955 | 0.9583 |
+| 5 | Baseline CNN (Weighted CE) | 0.7182 | 0.6727 | 0.4778 | 0.9385 |
+
+> **Clinical threshold**: At threshold = 0.435, EfficientNet-B0 (CE) achieves **93.3% sensitivity** and **93.3% specificity** for referable DR (grade >= 2), exceeding the 80% clinical screening guideline.
+
+### Per-Class Recall — Best Model (EfficientNet-B0, CE)
+
+| Grade | Class | Recall | Notes |
+|---|---|---|---|
+| 0 | No DR | 0.99 | Near-perfect — majority class (49.3% of data) |
+| 1 | Mild | 0.50 | Hard to distinguish from Moderate |
+| 2 | Moderate | 0.83 | Strong |
+| 3 | Severe | 0.38 | Lowest — only 193 training samples |
+| 4 | Proliferative | 0.45 | Adjacent-grade visual similarity after Gaussian filtering |
 
 ---
 
 ## Repository Structure
 
 ```
-retinaguard/
+RetinaGuard/
+│
+├── configs/                          # One YAML per experiment
+│   ├── ce.yaml                       # EfficientNet-B0 + Cross-Entropy  <- BEST
+│   ├── weighted_ce.yaml              # EfficientNet-B0 + Weighted CE
+│   ├── focal.yaml                    # EfficientNet-B0 + Focal Loss
+│   ├── resnet50.yaml                 # ResNet-50 + Weighted CE
+│   └── baseline_cnn.yaml             # Baseline CNN + Weighted CE
+│
+├── src/                              # Modular source code
+│   ├── __init__.py                   # Package exports
+│   ├── run_experiment.py             # <- CLI entry point (start here)
+│   ├── models.py                     # BaselineCNN, EfficientNet-B0, ResNet-50, build_model()
+│   ├── preprocess.py                 # CLAHE, transforms, RetinopathyDataset, DataLoaders
+│   ├── train.py                      # FocalLoss (alpha-scaled), training loop, checkpointing
+│   ├── evaluate.py                   # compute_metrics, TTA, threshold optimisation
+│   ├── interpret.py                  # Grad-CAM++, recall heatmap, interpretation summary
+│   └── utils.py                      # set_seed, save_json, logging, output directory management
+│
 ├── notebook/
-│   └── retinaguard_phase4.ipynb   # Main Kaggle notebook (run this)
-├── src/
-│   ├── dataset.py                 # RetinopathyDataset class
-│   ├── models.py                  # BaselineCNN, EfficientNet-B0, ResNet-50
-│   ├── losses.py                  # CE, Weighted CE, FocalLoss
-│   ├── train.py                   # Training engine, TTA
-│   └── metrics.py                 # Evaluation suite
-├── outputs/
-│   ├── figures/                   # All saved plots (PNG)
-│   ├── tables/                    # CSV results tables
-│   ├── checkpoints/               # Best model weights (.pth)
-│   └── gradcam/                   # Grad-CAM++ visualisations
+│   └── p4 RetinaGaurd.ipynb         # Kaggle notebook — EDA, figures, exploration
+│
+├── outputs/                          # Auto-generated by run_experiment.py
+│   ├── figures/                      # PNG plots (EDA + evaluation)
+│   ├── tables/                       # CSV results (metrics, splits)
+│   └── gradcam/                      # Grad-CAM++ visualisation grids
+│
 ├── docs/
-│   └── phase3_report.pdf          # Phase 3 submission
-├── requirements.txt
-└── README.md
+│   └── RetinaGuard.pdf               # IEEE-style final report
+│
+├── .gitignore
+├── LICENSE
+├── README.md
+└── requirements.txt
+```
+
+---
+
+## Experiment Configuration
+
+Every experiment is fully defined by a single YAML config in `configs/`. This enables the **controlled comparison** that is the core novelty of this project — identical training conditions across all runs, differing only in model architecture and loss function.
+
+```yaml
+# configs/focal.yaml — example
+experiment_name: "EfficientNet-B0 (Focal Loss)"
+model:        "efficientnet_b0"
+loss:         "focal"
+focal_gamma:  2.0
+focal_alpha:  0.25     # CRITICAL: rescales loss to CE magnitude
+lr:           0.0001
+num_epochs:   20
+patience:     5        # early stopping on Val QWK
+seed:         42
+```
+
+| Config | Model | Loss | Paper QWK |
+|---|---|---|---|
+| `ce.yaml` | EfficientNet-B0 | Cross-Entropy | **0.8582** <- best |
+| `focal.yaml` | EfficientNet-B0 | Focal Loss | 0.8282 |
+| `weighted_ce.yaml` | EfficientNet-B0 | Weighted CE | 0.7830 |
+| `resnet50.yaml` | ResNet-50 | Weighted CE | 0.8006 |
+| `baseline_cnn.yaml` | Baseline CNN | Weighted CE | 0.7182 |
+
+To add a new experiment, copy any config file, change the relevant fields, and run:
+```bash
+python src/run_experiment.py --config configs/your_new_config.yaml
+```
+
+---
+
+## Outputs
+
+All outputs are saved automatically under `outputs/{experiment_slug}/` when you run `run_experiment.py`. Nothing needs to be manually saved or moved.
+
+```
+outputs/
+└── efficientnet_b0_focal_loss/           # slug of experiment_name
+    ├── checkpoints/
+    │   └── EfficientNet_B0_Focal_Loss_best.pth   # best weights (by Val QWK)
+    ├── figures/
+    │   ├── training_curves.png           # loss / accuracy / QWK per epoch
+    │   ├── confusion_matrix.png          # raw counts + row-normalised recall
+    │   ├── roc_curves.png                # binary referable DR + per-class OvR
+    │   └── per_class_metrics.png         # precision / recall / F1 per grade
+    ├── gradcam/
+    │   └── gradcam_EfficientNet_B0_Focal_Loss.png
+    ├── logs/
+    │   └── efficientnet_b0_focal_loss_YYYYMMDD_HHMMSS.log
+    ├── history.json                      # train/val loss, acc, QWK per epoch
+    ├── metrics.json                      # all test metrics (QWK, AUROC, F1 ...)
+    ├── classification_report.json        # per-class precision / recall / F1
+    └── threshold_results.json            # optimal threshold + sens/spec/F1/PPV
 ```
 
 ---
@@ -72,9 +189,10 @@ retinaguard/
 ### Prerequisites
 
 - Python 3.10+
-- CUDA GPU recommended (Kaggle T4 used for experiments)
+- CUDA GPU recommended (experiments run on Kaggle T4, ~14 min/epoch)
+- ~5 GB free disk space for dataset + outputs
 
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/Vinayk393/RetinaGuard.git
@@ -90,101 +208,150 @@ pip install -r requirements.txt
 ### 3. Dataset access
 
 1. Go to: https://www.kaggle.com/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered
-2. Accept the dataset terms and download
-3. Extract to match this path structure:
-   ```
-   /kaggle/input/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered/
-   ├── gaussian_filtered_images/gaussian_filtered_images/
-   │   ├── No_DR/
-   │   ├── Mild/
-   │   ├── Moderate/
-   │   ├── Severe/
-   │   └── Proliferate_DR/
-   └── train.csv
-   ```
+2. Accept licence terms and download
+3. Extract to match this path (or update `dataset_root` in the config YAML):
 
-### 4. Run the notebook
-
-**On Kaggle (recommended):**
-1. Upload `notebooks/retinaguard_phase4.ipynb` to Kaggle
-2. Add the dataset (link above)
-3. Enable GPU accelerator (T4 × 1 or T4 × 2)
-4. Enable Internet access (required for pretrained weights)
-5. Run All Cells
-
-**Expected runtime:** ~2.5 hours for all 5 models on T4
-
-**Expected output:**
 ```
-outputs/
-  figures/    → 10+ PNG plots
-  tables/     → 6 CSV tables
-  checkpoints/→ 5 .pth model weights
-  gradcam/    → 4 Grad-CAM++ visualisation grids
+/kaggle/input/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered/
+├── gaussian_filtered_images/
+│   └── gaussian_filtered_images/
+│       ├── No_DR/          (1805 images)
+│       ├── Mild/           (370 images)
+│       ├── Moderate/       (999 images)
+│       ├── Severe/         (193 images)
+│       └── Proliferate_DR/ (295 images)
+└── train.csv
 ```
+
+### 4. Run an experiment
+
+```bash
+# Recommended: best model
+python src/run_experiment.py --config configs/ce.yaml
+
+# Skip Grad-CAM generation for faster runs
+python src/run_experiment.py --config configs/ce.yaml --no_gradcam
+
+# Override config values inline
+python src/run_experiment.py --config configs/focal.yaml --epochs 5 --seed 123
+```
+
+**Reproducibility guarantee:** seed=42 applied globally (Python, NumPy, PyTorch, CUDA). Stratified splits saved as CSV. All metrics, history, and outputs logged automatically.
+
+---
+
+## Notebook (Optional — Exploration & Visualisation)
+
+`notebook/p4 RetinaGaurd.ipynb` contains the full EDA, augmentation previews, and inline visualisations. It is for **exploration and figure generation**, not the primary execution path. All experiments should be run via `src/run_experiment.py`.
+
+**To run on Kaggle:**
+1. Upload `notebook/p4 RetinaGaurd.ipynb` to a new Kaggle notebook
+2. Add dataset via **Add Data** -> search `sovitrath diabetic retinopathy gaussian`
+3. Set **Accelerator -> GPU T4 x1** and enable **Internet**
+4. Click **Run All** (~2.5 hours for all 5 models)
 
 ---
 
 ## Methods Overview
 
 ### Dataset
-- **3,662** retinal fundus images, 224×224px, Gaussian-filtered
-- **5 classes**: No DR (49.3%), Mild (10.1%), Moderate (27.3%), Severe (5.3%), Proliferative (8.1%)
-- **Imbalance ratio**: 9.4× (No DR vs Severe)
 
-### Preprocessing
-- CLAHE (Contrast Limited Adaptive Histogram Equalization) on L-channel
-- ImageNet normalization (μ=[0.485, 0.456, 0.406])
+| Property | Value |
+|---|---|
+| Total images | 3,662 |
+| Image size | 224 x 224 px |
+| Source preprocessing | Gaussian-filtered |
+| Classes | 5 (No DR -> Proliferative DR) |
+| Imbalance ratio | 9.4x (Grade 0 vs Grade 3) |
+| Split | 70 / 15 / 15 stratified (seed=42) |
 
-### Augmentation (training only)
-- Random horizontal/vertical flip
-- Random rotation ±20°
-- ColorJitter (brightness, contrast, saturation)
-- Random affine (translate ±5%, scale 95–105%)
+### Preprocessing Pipeline
 
-### Models
-| Model | Params | Source |
+1. **CLAHE** — on L-channel of LAB colourspace (clip=2.0, tile=8x8)
+2. **ImageNet normalisation** — mu=[0.485,0.456,0.406], sigma=[0.229,0.224,0.225]
+
+### Data Augmentation (training only)
+
+| Transform | Parameters |
+|---|---|
+| Random horizontal flip | p=0.5 |
+| Random vertical flip | p=0.3 |
+| Random rotation | +/-20 degrees |
+| ColorJitter | brightness +/-0.2, contrast +/-0.2, saturation +/-0.1 |
+| Random affine | translate +/-5%, scale 95-105% |
+
+### Training Hyperparameters
+
+| Parameter | Value |
+|---|---|
+| Optimizer | AdamW |
+| Learning rate | 1e-4 |
+| Weight decay | 1e-4 |
+| Scheduler | CosineAnnealingLR (T_max=20, eta_min=1e-6) |
+| Mixed precision | torch.cuda.amp (AMP) |
+| Gradient clipping | max norm=1.0 |
+| Backbone freeze | Epochs 1-3, unfrozen at epoch 4 |
+| Batch size | 32 |
+| Max epochs | 20 |
+| Early stopping | Patience=5 on Val QWK |
+| Hardware | NVIDIA T4 (Kaggle) |
+
+### Loss Functions
+
+| Loss | Key detail | When to use |
 |---|---|---|
-| Baseline CNN | 456K | From scratch |
-| EfficientNet-B0 | 4.0M | timm, ImageNet pretrained |
-| ResNet-50 | 23.5M | timm, ImageNet pretrained |
-
-### Training
-- **Optimizer**: AdamW (lr=1e-4, weight_decay=1e-4)
-- **Scheduler**: CosineAnnealingLR (T_max=20, eta_min=1e-6)
-- **Mixed precision**: torch.cuda.amp (AMP)
-- **Backbone freeze**: epochs 1–3, unfreeze at epoch 4
-- **Early stopping**: patience=5 on Val QWK
-- **Batch size**: 32
-
-### Evaluation
-- 70/15/15 stratified split (seed=42)
-- Test-Time Augmentation: 5 passes, averaged softmax
-- Metrics: QWK, Accuracy, Macro F1, AUROC (referable DR ≥ grade 2)
-- Explainability: Grad-CAM++ on target class
+| **CE** | Label smoothing epsilon=0.05 | Best overall QWK, priority is grading accuracy |
+| **Weighted CE** | Inverse-freq weights: Severe=2.02, Prolif=1.32 | Highest minority recall, cost of missed severe cases is high |
+| **Focal Loss** | gamma=2.0, **alpha=0.25** (magnitude-corrected) | Best minority/majority balance for screening deployment |
 
 ---
 
-## Key Figures
+## Key Findings
 
-| Figure | Description |
-|---|---|
-| Fig 1 | Class distribution (bar + pie + table) |
-| Fig 2 | Sample retinal images per class |
-| Fig 3 | Pixel intensity distributions |
-| Fig 4 | Brightness & contrast boxplots |
-| Fig 5 | Train/Val/Test split distribution |
-| Fig 6 | Augmentation pipeline preview |
-| Fig 7 | Final model comparison (4 metrics) |
-| Fig 8 | Radar chart comparison |
-| Fig 9 | Per-class recall heatmap |
-| Fig 10 | Clinical threshold optimization |
+**CE wins on overall QWK but underserves minority grades:**
+- EfficientNet-B0 (CE): QWK=0.8582, Severe recall=0.38
+- The high QWK coexists with near-zero Severe detection — accuracy alone hides this
+
+**Focal Loss gives the best clinical trade-off:**
+- QWK=0.8282, Mild=0.79, Severe=0.55 — best minority/majority balance of all 5 models
+- alpha=0.25 is essential: without it, focal loss magnitudes collapse to ~0.006, causing effectively random predictions
+
+**Weighted CE maximises minority recall at a cost:**
+- Severe recall=0.72 (highest), but accuracy drops to 0.644 and prediction stability suffers
+- Appropriate when clinical cost of missing a Severe case is extreme
+
+**Architecture efficiency:**
+- EfficientNet-B0 (4.0M params) outperforms ResNet-50 (23.5M) on QWK — compound scaling is more efficient for this task
+- Baseline CNN (456K, from scratch) confirms 19.4% relative QWK gain from pretrained transfer learning
+
+---
+
+## Known Limitations
+
+1. **Dataset size** — 3,662 images vs EyePACS (88,000+); limits generalisation
+2. **Image-level splitting** — no patient identifiers in dataset; potential data leakage acknowledged
+3. **Severe recall** — Grade 3 recall=0.38 across all models; driven by 193 training samples and visual similarity to Grade 2 after Gaussian filtering
+4. **No external validation** — generalisation across camera manufacturers, dilation protocols, and imaging environments unconfirmed
+5. **Gaussian filtering** — source preprocessing reduces fine-grained lesion texture that helps distinguish adjacent grades
 
 ---
 
 ## Requirements
 
-See `requirements.txt` for full list.
+```
+torch>=2.0.0
+torchvision>=0.15.0
+timm>=0.9.0
+grad-cam>=1.4.0
+pyyaml>=6.0
+opencv-python-headless>=4.7.0
+Pillow>=9.0.0
+numpy>=1.23.0
+pandas>=1.5.0
+scikit-learn>=1.2.0
+matplotlib>=3.6.0
+seaborn>=0.12.0
+```
 
 ---
 
@@ -196,7 +363,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ## Acknowledgements
 
-- Dataset: Sovit Ratan Rath (Kaggle)
-- Backbone weights: timm (Ross Wightman)
-- Grad-CAM++: Jacob Gildenblat et al.
-# RetinaGuard
+- Dataset: [Sovit Ratan Rath](https://www.kaggle.com/sovitrath) (Kaggle)
+- Pretrained weights: [timm](https://github.com/huggingface/pytorch-image-models) — Ross Wightman
+- Grad-CAM++: [pytorch-grad-cam](https://github.com/jacobgil/pytorch-grad-cam) — Jacob Gildenblat et al.
+- Course: CECS 551 — Machine Learning, CSULB, Spring 2026

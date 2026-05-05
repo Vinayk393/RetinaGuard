@@ -1,0 +1,50 @@
+# ══════════════════════════════════════════════════════════════
+# RetinaGuard — Experiment Config: ResNet-50 + Weighted CE
+# ══════════════════════════════════════════════════════════════
+# Usage:
+#   python src/run_experiment.py --config configs/resnet50.yaml
+#
+# Result (paper): QWK=0.8006 | Acc=0.693 | AUROC=0.9763
+# Purpose: architectural comparison vs EfficientNet-B0.
+#   23.5M params vs 4.0M — competitive QWK at 6× parameter cost.
+# ══════════════════════════════════════════════════════════════
+
+experiment_name: "ResNet-50 (Weighted CE)"
+
+dataset_root: "/kaggle/input/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered/gaussian_filtered_images/gaussian_filtered_images"
+csv_path:     "/kaggle/input/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered/train.csv"
+output_dir:   "/kaggle/working/outputs"
+
+class_dirs:
+  "0": "No_DR"
+  "1": "Mild"
+  "2": "Moderate"
+  "3": "Severe"
+  "4": "Proliferate_DR"
+
+img_size:     224
+num_classes:  5
+class_names:  ["No DR", "Mild", "Moderate", "Severe", "Proliferative"]
+
+train_frac:   0.70
+val_frac:     0.15
+test_frac:    0.15
+
+use_clahe:    true
+
+model:        "resnet50"
+pretrained:   true
+
+loss:         "weighted_ce"
+label_smooth: 0.05
+
+lr:           0.0001
+weight_decay: 0.0001
+num_epochs:   20
+batch_size:   32
+patience:     5
+use_amp:      true
+num_workers:  2
+tta_n:        5
+
+seed: 42

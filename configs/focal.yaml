@@ -1,0 +1,69 @@
+# ══════════════════════════════════════════════════════════════
+# RetinaGuard — Experiment Config: EfficientNet-B0 + Focal Loss
+# ══════════════════════════════════════════════════════════════
+# Usage:
+#   python src/run_experiment.py --config configs/focal.yaml
+#
+# Result (paper): QWK=0.8282 | Acc=0.736 | AUROC=0.9752
+#
+# When to use: best minority/majority recall trade-off.
+#   Mild recall=0.79 | Severe recall=0.55 — highest of all 5 models.
+#   Use when clinical sensitivity across all grades matters most.
+#
+# Focal Loss: FL(p) = -alpha * (1-p)^gamma * log(p)
+#   gamma=2.0  → focuses training on hard misclassified examples
+#   alpha=0.25 → CRITICAL: rescales loss to CE magnitude.
+#                Without alpha, focal loss magnitudes of ~0.006
+#                cause near-zero gradients and training instability.
+#                This fix is documented in the RetinaGuard paper.
+# ══════════════════════════════════════════════════════════════
+
+experiment_name: "EfficientNet-B0 (Focal Loss)"
+
+# ── Dataset
+dataset_root: "/kaggle/input/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered/gaussian_filtered_images/gaussian_filtered_images"
+csv_path:     "/kaggle/input/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered/train.csv"
+output_dir:   "/kaggle/working/outputs"
+
+class_dirs:
+  "0": "No_DR"
+  "1": "Mild"
+  "2": "Moderate"
+  "3": "Severe"
+  "4": "Proliferate_DR"
+
+# ── Data properties
+img_size:     224
+num_classes:  5
+class_names:  ["No DR", "Mild", "Moderate", "Severe", "Proliferative"]
+
+# ── Splits
+train_frac:   0.70
+val_frac:     0.15
+test_frac:    0.15
+
+# ── Preprocessing
+use_clahe:    true
+
+# ── Model
+model:        "efficientnet_b0"
+pretrained:   true
+
+# ── Loss
+loss:         "focal"
+label_smooth: 0.05
+focal_gamma:  2.0    # focusing parameter — higher = more focus on hard examples
+focal_alpha:  0.25   # magnitude scaling — REQUIRED to prevent near-zero loss
+
+# ── Training
+lr:           0.0001
+weight_decay: 0.0001
+num_epochs:   20
+batch_size:   32
+patience:     5
+use_amp:      true
+num_workers:  2
+tta_n:        5
+
+# ── Reproducibility
+seed: 42

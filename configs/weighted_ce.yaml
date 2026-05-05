@@ -1,0 +1,66 @@
+# ══════════════════════════════════════════════════════════════
+# RetinaGuard — Experiment Config: EfficientNet-B0 + Weighted CE
+# ══════════════════════════════════════════════════════════════
+# Usage:
+#   python src/run_experiment.py --config configs/weighted_ce.yaml
+#
+# Result (paper): QWK=0.7830 | Acc=0.644 | AUROC=0.9583
+#
+# When to use: when minority grade recall (Severe, Proliferative)
+#   is more clinically critical than overall accuracy.
+#   Class weighting improves Severe recall (0.72 vs 0.38 for CE)
+#   at the cost of reduced majority-class precision.
+#
+# Class weights (inverse-frequency, normalised × 5):
+#   No DR=0.22 | Mild=1.05 | Moderate=0.39 | Severe=2.02 | Prolif=1.32
+# ══════════════════════════════════════════════════════════════
+
+experiment_name: "EfficientNet-B0 (Weighted CE)"
+
+# ── Dataset
+dataset_root: "/kaggle/input/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered/gaussian_filtered_images/gaussian_filtered_images"
+csv_path:     "/kaggle/input/datasets/sovitrath/diabetic-retinopathy-224x224-gaussian-filtered/train.csv"
+output_dir:   "/kaggle/working/outputs"
+
+class_dirs:
+  "0": "No_DR"
+  "1": "Mild"
+  "2": "Moderate"
+  "3": "Severe"
+  "4": "Proliferate_DR"
+
+# ── Data properties
+img_size:     224
+num_classes:  5
+class_names:  ["No DR", "Mild", "Moderate", "Severe", "Proliferative"]
+
+# ── Splits
+train_frac:   0.70
+val_frac:     0.15
+test_frac:    0.15
+
+# ── Preprocessing
+use_clahe:    true
+
+# ── Model
+model:        "efficientnet_b0"
+pretrained:   true
+
+# ── Loss
+loss:         "weighted_ce"
+label_smooth: 0.05
+# Class weights are computed automatically from training split
+# using inverse-frequency normalisation (see preprocess.compute_class_weights)
+
+# ── Training
+lr:           0.0001
+weight_decay: 0.0001
+num_epochs:   20
+batch_size:   32
+patience:     5
+use_amp:      true
+num_workers:  2
+tta_n:        5
+
+# ── Reproducibility
+seed: 42
